@@ -4,7 +4,7 @@
 
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
-use esp32c3_hal::{clock::ClockControl, embassy, peripherals::Peripherals, prelude::*};
+use esp32c6_hal::{clock::ClockControl, embassy, peripherals::Peripherals, prelude::*};
 use esp_backtrace as _;
 
 #[embassy_executor::task]
@@ -24,7 +24,7 @@ async fn main(spawner: Spawner) {
 
     embassy::init(
         &clocks,
-        esp32c3_hal::systimer::SystemTimer::new(peripherals.SYSTIMER),
+        esp32c6_hal::systimer::SystemTimer::new(peripherals.SYSTIMER),
     );
 
     // setup logger
