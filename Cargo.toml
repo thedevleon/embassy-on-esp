@@ -1,0 +1,16 @@
+[package]
+name = "embassy-test"
+version = "0.1.0"
+authors = ["Leon <12817042+thedevleon@users.noreply.github.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+esp32c3-hal = {version = "0.15.0", features = ["log", "embassy", "async", "embassy-executor-thread", "embassy-time-systick"]}
+esp-backtrace = { version = "0.10.0", features = ["esp32c3", "panic-handler", "exception-handler", "print-jtag-serial"] }
+esp-println = { version = "0.8.0", default-features = false, features = ["esp32c3", "log", "jtag-serial"] }
+log = { version = "0.4.20" }
+
+embassy-executor   = { version = "0.5.0", features = ["nightly"] }
+embassy-sync       = "0.5.0"
+embassy-time       = "0.3.0"
