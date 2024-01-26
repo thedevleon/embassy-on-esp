@@ -211,6 +211,7 @@ dependencies = [
  "esp-println",
  "esp32c6-hal",
  "log",
+ "rgb",
  "smart-leds",
 ]
 
