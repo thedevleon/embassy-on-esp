@@ -3,7 +3,7 @@
 #![feature(type_alias_impl_trait)]
 
 use embassy_executor::Spawner;
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration, Timer, Ticker};
 use embassy_sync::signal::Signal;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use esp32c6_hal::{clock::ClockControl, embassy, peripherals::Peripherals, prelude::*, rmt::Rmt, IO, gpio::GpioPin, gpio::Output, gpio::PushPull};
@@ -34,6 +34,7 @@ static LED_ANIMATION_SIGNAL: Signal<CriticalSectionRawMutex, LedAnimation> = Sig
 
 #[embassy_executor::task]
 async fn led_animator(mut led: SmartLedsAdapter<esp32c6_hal::rmt::Channel<0>, 0, 25>) { // TODO types of channel and gpio
+    let mut ticker = Ticker::every(Duration::from_millis(33)); // 30 Hz
     let mut state: AnimationState = AnimationState {
         new_color: RGB8{r: 0, g: 0, b: 0},
         new_brightness: 0,
@@ -74,14 +75,12 @@ async fn led_animator(mut led: SmartLedsAdapter<esp32c6_hal::rmt::Channel<0>, 0,
 
         led.write(gamma(brightness([state.new_color].iter().cloned(), state.new_brightness))).unwrap();
 
-        // 30 Hz
-        Timer::after(Duration::from_millis(33)).await;
+        ticker.next().await;
     }
 }
 
 #[main]
 async fn main(spawner: Spawner) {
-    esp_println::println!("Init!");
     let peripherals = Peripherals::take();
     let system = peripherals.SYSTEM.split();
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
@@ -93,7 +92,9 @@ async fn main(spawner: Spawner) {
     // this requires a clean rebuild because of https://github.com/rust-lang/cargo/issues/10358
     esp_println::logger::init_logger_from_env();
 
-    // something feels odd with the clock setup... it's running a lot faster than it should
+    log::info!("Hello, world!");
+
+    // This needs the features esp32c6-hal/embassy-time-systick !AND! embassy-time/tick-hz-16_000_000
     embassy::init(
         &clocks,
         esp32c6_hal::systimer::SystemTimer::new(peripherals.SYSTIMER),
@@ -101,7 +102,7 @@ async fn main(spawner: Spawner) {
 
     let rmt = Rmt::new(peripherals.RMT, 80u32.MHz(), &clocks).unwrap();
     let rmt_buffer = smartLedBuffer!(1);
-    let mut led = SmartLedsAdapter::new(rmt.channel0, io.pins.gpio8, rmt_buffer);
+    let led = SmartLedsAdapter::new(rmt.channel0, io.pins.gpio8, rmt_buffer);
 
     spawner.spawn(led_animator(led)).ok();
     // TODO: replace once we know the correct types for the channel and gpio
@@ -114,35 +115,43 @@ async fn main(spawner: Spawner) {
         let color1 = RGBA8{r: 138, g: 43, b: 226, a: 128};
         let color2 = RGBA8{r: 0, g: 0, b: 255, a: 128};
 
+
+        log::info!("Testing: RGB");
         LED_ANIMATION_SIGNAL.signal(LedAnimation::SolidColor(RGBA8{r: 255, g: 0, b: 0, a: 128}));
-        Timer::after(Duration::from_millis(50_000)).await;
+        Timer::after(Duration::from_millis(2_000)).await;
         LED_ANIMATION_SIGNAL.signal(LedAnimation::SolidColor(RGBA8{r: 0, g: 255, b: 0, a: 128}));
-        Timer::after(Duration::from_millis(50_000)).await;
-        LED_ANIMATION_SIGNAL.signal(LedAnimation::SolidColor(RGBA8{r: 0, g: 255, b: 155, a: 128}));
-        Timer::after(Duration::from_millis(50_000)).await;
+        Timer::after(Duration::from_millis(2_000)).await;
+        LED_ANIMATION_SIGNAL.signal(LedAnimation::SolidColor(RGBA8{r: 0, g: 0, b: 155, a: 128}));
+        Timer::after(Duration::from_millis(2_000)).await;
 
         // SolidColor
+        log::info!("Testing: SolidColor");
         LED_ANIMATION_SIGNAL.signal(LedAnimation::SolidColor(color1));
-        Timer::after(Duration::from_millis(100_000)).await;
+        Timer::after(Duration::from_millis(10_000)).await;
 
         // FadeOnOff
+        log::info!("Testing: FadeOnOff");
         LED_ANIMATION_SIGNAL.signal(LedAnimation::FadeOnOff(color1, 2.0));
-        Timer::after(Duration::from_millis(100_000)).await;
+        Timer::after(Duration::from_millis(10_000)).await;
 
         // FadeFromTo
+        log::info!("Testing: FadeFromTo");
         LED_ANIMATION_SIGNAL.signal(LedAnimation::FadeFromTo(color1, color2, 3.0));
-        Timer::after(Duration::from_millis(100_000)).await;
+        Timer::after(Duration::from_millis(10_000)).await;
 
         // Blink
+        log::info!("Testing: Blink");
         LED_ANIMATION_SIGNAL.signal(LedAnimation::Blink(color1, 0.5, 1.0));
-        Timer::after(Duration::from_millis(100_000)).await;
+        Timer::after(Duration::from_millis(10_000)).await;
 
         // BlinkBurst
+        log::info!("Testing: BlinkBurst");
         LED_ANIMATION_SIGNAL.signal(LedAnimation::BlinkBurst(color1, 3, 0.1, 1.0));
-        Timer::after(Duration::from_millis(100_000)).await;
+        Timer::after(Duration::from_millis(10_000)).await;
 
         // Off
+        log::info!("Testing: Off");
         LED_ANIMATION_SIGNAL.signal(LedAnimation::Off);
-        Timer::after(Duration::from_millis(100_000)).await;
+        Timer::after(Duration::from_millis(10_000)).await;
     }
 }

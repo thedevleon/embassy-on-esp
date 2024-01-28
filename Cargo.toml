@@ -13,7 +13,7 @@ log = { version = "0.4.20" }
 
 embassy-executor   = { version = "0.5.0", features = ["nightly"] }
 embassy-sync       = "0.5.0"
-embassy-time       = "0.3.0"
+embassy-time       = {version = "0.3.0", features = ["tick-hz-16_000_000"]}
 
 esp-hal-smartled   = { version = "0.8.0", features = ["esp32c6"] }
 smart-leds         = "0.4.0"
