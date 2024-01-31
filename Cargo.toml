@@ -1,5 +1,5 @@
 [package]
-name = "embassy-test"
+name = "embassy-on-esp"
 version = "0.1.0"
 authors = ["Leon <12817042+thedevleon@users.noreply.github.com>"]
 edition = "2021"
