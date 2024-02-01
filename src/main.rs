@@ -60,13 +60,14 @@ async fn led_animator(mut led: SmartLedsAdapter<esp32c6_hal::rmt::Channel<0>, 0,
                 }
 
                 current_color = RGB8{r: color.r, g: color.g, b: color.b};
+                let alpha = color.a as f32;
 
                 if progress < 0.5 {
                     // Fade On
-                    current_brightness = (color.a as f32 * (progress * 2.0)) as u8; 
+                    current_brightness = (alpha * (progress * 2.0)) as u8; 
                 } else if progress > 0.5 {
                     // Fade Off
-                    current_brightness = (color.a as f32 * (1.0 - ((progress - 0.5) * 2.0))) as u8;
+                    current_brightness = (alpha * (1.0 - ((progress - 0.5) * 2.0))) as u8;
                 }
             },
             LedAnimation::FadeFromTo(color1, color2, duration) => {
